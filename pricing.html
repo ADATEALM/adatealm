@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الاشتراكات - منصة أداة علم</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Tajawal', 'sans-serif'] },
+                    boxShadow: { 'glow': '0 0 40px rgba(59, 130, 246, 0.15)' }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-slate-50 text-slate-900 font-sans selection:bg-blue-500 selection:text-white pb-20">
+
+    <!-- Navbar -->
+    <nav class="p-6 flex justify-between items-center max-w-7xl mx-auto">
+        <a href="index.html" class="flex items-center gap-2 group">
+            <div
+                class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 transition group-hover:scale-110">
+                <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+            <span class="font-bold text-xl tracking-tight">أداة علم</span>
+        </a>
+        <a href="login.html" class="text-slate-500 hover:text-blue-600 font-bold text-sm">تسجيل الدخول</a>
+    </nav>
+
+    <!-- Header -->
+    <header class="text-center px-4 py-16 max-w-3xl mx-auto">
+        <div
+            class="inline-block bg-blue-100/50 text-blue-600 px-4 py-1.5 rounded-full text-xs font-black mb-6 border border-blue-200">
+            ✨ استثمر في تفوقك الدراسي</div>
+        <h1
+            class="text-4xl md:text-6xl font-black mb-6 leading-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+            خطط تناسب <br> <span
+                class="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">طموحك الطبي</span>
+        </h1>
+        <p class="text-slate-500 text-lg md:text-xl leading-relaxed">
+            انضم للآلاف من طلاب الطب والمجالات الصحية الذين يثقون بمنصة أداة علم للوصول للمحتوى المتميز وأدوات التتبع
+            الذكية.
+        </p>
+    </header>
+
+    <!-- Pricing Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto px-6 items-start">
+
+        <!-- Free Plan -->
+        <div
+            class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl transition duration-300 relative group">
+            <div class="absolute top-0 right-0 w-full h-2 bg-slate-100 rounded-t-3xl"></div>
+
+            <h3 class="text-2xl font-bold text-slate-800 mb-2">البداية</h3>
+            <div class="flex items-baseline gap-1 my-4">
+                <span class="text-4xl font-black text-slate-800">0</span>
+                <span class="text-slate-400 font-bold">DZD</span>
+            </div>
+            <p class="text-slate-500 text-sm mb-8">مثالية لتجربة المنصة والوصول للملخصات الأساسية.</p>
+
+            <button onclick="window.location.href='login.html'"
+                class="w-full py-4 rounded-2xl border-2 border-slate-200 font-bold text-slate-600 hover:border-slate-800 hover:text-slate-800 hover:bg-slate-50 transition">ابدأ
+                مجاناً</button>
+
+            <ul class="mt-8 space-y-4 text-sm font-medium text-slate-600">
+                <li class="flex items-center gap-3"><i class="fa-solid fa-check text-green-500"></i> وصول للملخصات
+                    العامة</li>
+                <li class="flex items-center gap-3"><i class="fa-solid fa-check text-green-500"></i> عدد محدود من بطاقات
+                    الذاكرة</li>
+                <li class="flex items-center gap-3 text-slate-400 opacity-60"><i class="fa-solid fa-xmark"></i> نظام
+                    التتبع الذكي (Cloud SRS)</li>
+                <li class="flex items-center gap-3 text-slate-400 opacity-60"><i class="fa-solid fa-xmark"></i> بنك
+                    الأسئلة الشامل</li>
+            </ul>
+        </div>
+
+        <!-- Pro Plan -->
+        <div
+            class="bg-slate-900 rounded-3xl p-8 border border-slate-800 shadow-2xl shadow-blue-900/20 relative overflow-hidden transform md:-translate-y-4 hover:scale-[1.02] transition duration-300">
+
+            <!-- Glow Effect -->
+            <div class="absolute -top-24 -right-24 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl p-10"></div>
+
+            <div class="relative z-10">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-2xl font-bold text-white">المحترف <span class="text-blue-400">PRO</span></h3>
+                    <span
+                        class="bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">الأكثر
+                        طلباً 🔥</span>
+                </div>
+
+                <div class="flex items-baseline gap-1 my-4">
+                    <span class="text-5xl font-black text-white">1000</span>
+                    <span class="text-slate-400 font-bold text-lg">DZD / سنة</span>
+                </div>
+                <p class="text-slate-400 text-sm mb-8">استثمار بسيط مقابل تفوقك الأكاديمي طوال العام.</p>
+
+                <button onclick="openPaymentModal('Pro Subscription', 1000)"
+                    class="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition transform hover:translate-y-[-2px]">اشترك
+                    الآن</button>
+
+                <ul class="mt-8 space-y-4 text-sm font-medium text-slate-300">
+                    <li class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-blue-400"><i
+                                class="fa-solid fa-check text-xs"></i></div> وصول لجميع السنوات والمواد
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-blue-400"><i
+                                class="fa-solid fa-check text-xs"></i></div> <strong>نظام الذاكرة السحابي (SRS
+                            Cloud)</strong>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-blue-400"><i
+                                class="fa-solid fa-check text-xs"></i></div> تتبع دقيق للإحصائيات والتقدم
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-blue-400"><i
+                                class="fa-solid fa-check text-xs"></i></div> أولوية في الدعم الفني
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="max-w-3xl mx-auto px-6 mt-20 text-center">
+        <p class="text-slate-400 text-sm">هل لديك أسئلة؟ <a href="contact.html"
+                class="text-blue-600 hover:underline">تواصل معنا</a></p>
+    </div>
+
+    <!-- Payment Script -->
+    <script type="module" src="./js/payment_modal.js"></script>
+
+</body>
+
+</html>

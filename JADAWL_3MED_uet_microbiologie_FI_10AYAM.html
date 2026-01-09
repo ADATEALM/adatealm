@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Microbiologie Dashboard - Trilingual Edition</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-color: #f1f5f9;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-sec: #64748b;
+      
+      /* ألوان المواد للميكروبيولوجيا */
+      --col-gen: #0ea5e9;   /* أزرق سماوي - بكتيريا عامة */
+      --col-spec: #3b82f6;  /* أزرق غامق - بكتيريا خاصة */
+      --col-viro: #8b5cf6;  /* بنفسجي - فيروسات */
+      --col-clinic: #10b981; /* أخضر - سريري ومضادات */
+      --col-review: #ef4444; /* أحمر - مراجعة */
+      
+      --rev-color: #6366f1; /* لون أزرار المراجعة */
+      --qcm-color: #0891b2; /* لون أزرار التمارين */
+      
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --font-ar: 'Tajawal', sans-serif;
+      --font-en: 'Roboto', sans-serif;
+    }
+
+    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      font-family: var(--font-ar);
+      background-color: var(--bg-color);
+      margin: 0;
+      padding: 0;
+      color: var(--text-main);
+      padding-bottom: 80px;
+    }
+
+    /* --- الهيدر ولوحة التحكم --- */
+    .dashboard-header {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: white;
+        padding: 1.5rem 1rem 2.5rem 1rem;
+        border-radius: 0 0 40px 40px;
+        box-shadow: var(--shadow-lg);
+        margin-bottom: 2.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dashboard-header::before {
+        content: ''; position: absolute; top: -50px; left: -50px;
+        width: 200px; height: 200px; background: rgba(255,255,255,0.05);
+        border-radius: 50%;
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; padding: 0 1rem; }
+
+    .header-top-row {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .dash-title h1 { margin: 0; font-size: 1.6rem; font-weight: 800; }
+    .dash-title span { color: var(--col-gen); font-size: 0.85em; opacity: 0.9; }
+
+    /* زر العودة المدمج */
+    .integrated-back-btn {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255,255,255,0.2);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 12px;
+        cursor: pointer;
+        display: flex; align-items: center; gap: 8px;
+        font-family: var(--font-ar); font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    .integrated-back-btn:hover { background: rgba(255, 255, 255, 0.3); transform: translateY(-2px); }
+
+    /* شبكة الإحصائيات */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+    }
+
+    .stat-card {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 1rem; border-radius: 16px;
+        text-align: center; transition: transform 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.15); }
+    
+    .stat-card h3 { margin: 0 0 5px; font-size: 0.8rem; color: #cbd5e1; font-weight: normal; }
+    .stat-card .value { font-size: 1.5rem; font-weight: 800; color: white; }
+    
+    /* شريط التقدم */
+    .progress-wrapper {
+        margin-top: 1.5rem; background: rgba(0,0,0,0.3);
+        height: 8px; border-radius: 20px; overflow: hidden;
+    }
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--col-gen), var(--col-viro));
+        width: 0%; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+    }
+
+    /* --- تنسيق المهام --- */
+    .schedule-grid { display: grid; gap: 2.5rem; }
+    
+    .day-header {
+        font-size: 1.4rem; font-weight: 800; color: var(--text-main);
+        margin-bottom: 1rem; display: flex; align-items: center; gap: 10px;
+    }
+    .day-header::before {
+        content: ''; display: block; width: 6px; height: 24px;
+        background: var(--col-gen); border-radius: 4px;
+    }
+
+    .tasks-container {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .task-card {
+        background: var(--card-bg); border-radius: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex; flex-direction: column;
+        overflow: hidden; position: relative;
+    }
+    .task-card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.08); transform: translateY(-4px); }
+
+    /* الشريط الملون */
+    .subject-strip { height: 5px; width: 100%; }
+    .strip-gen { background: var(--col-gen); }
+    .strip-spec { background: var(--col-spec); }
+    .strip-viro { background: var(--col-viro); }
+    .strip-clinic { background: var(--col-clinic); }
+    .strip-review { background: var(--col-review); }
+
+    .card-content { padding: 1.25rem; flex-grow: 1; }
+
+    .meta-tags { margin-bottom: 10px; }
+    .badge { 
+        font-size: 0.75rem; padding: 4px 10px; border-radius: 8px; color: white; font-weight: bold; display: inline-block;
+    }
+    .bg-gen { background: var(--col-gen); }
+    .bg-spec { background: var(--col-spec); }
+    .bg-viro { background: var(--col-viro); }
+    .bg-clinic { background: var(--col-clinic); }
+    .bg-review { background: var(--col-review); }
+
+    .title-ar { font-weight: 800; font-size: 1.1rem; margin-bottom: 4px; line-height: 1.4; }
+    
+    /* تنسيق العنوان الإنجليزي الجديد */
+    .title-en { 
+        font-family: var(--font-en); 
+        font-size: 0.95rem; 
+        color: #334155; 
+        font-weight: 500;
+        margin-bottom: 2px;
+        direction: ltr;
+        text-align: left;
+    }
+
+    .title-fr { 
+        font-family: var(--font-en); 
+        font-size: 0.85rem; 
+        color: var(--text-sec); 
+        margin-bottom: 0.5rem; 
+        font-style: italic;
+        direction: ltr;
+        text-align: left;
+    }
+    
+    /* --- نظام التتبع (Tracking) --- */
+    .tracker-box {
+        background: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;
+        padding: 12px 1.25rem;
+    }
+
+    .track-row {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 8px;
+    }
+    .track-row:last-child { margin-bottom: 0; }
+
+    .track-label {
+        font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 6px;
+    }
+    .lbl-rev { color: var(--rev-color); }
+    .lbl-qcm { color: var(--qcm-color); }
+
+    .dots { display: flex; gap: 6px; }
+    
+    .dot {
+        width: 30px; height: 30px; border-radius: 8px;
+        border: 1px solid #cbd5e1; background: white;
+        color: #94a3b8; font-family: var(--font-en); font-weight: bold; font-size: 0.8rem;
+        cursor: pointer; transition: all 0.2s ease;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .dot:hover { background: #f1f5f9; border-color: #94a3b8; }
+    
+    /* حالات التفعيل */
+    .dots-rev .dot.active { background: var(--rev-color); color: white; border-color: var(--rev-color); transform: scale(1.05); }
+    .dots-qcm .dot.active { background: var(--qcm-color); color: white; border-color: var(--qcm-color); transform: scale(1.05); }
+
+    /* --- الفوتر --- */
+    .card-footer {
+        padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center;
+        background: white;
+    }
+    .timer { font-family: var(--font-en); font-weight: 700; font-size: 1.2rem; color: var(--text-main); }
+    
+    .actions { display: flex; gap: 8px; }
+    .btn-icon {
+        width: 38px; height: 38px; border-radius: 10px; border: none; cursor: pointer; color: white;
+        display: flex; align-items: center; justify-content: center; font-size: 1rem;
+        transition: transform 0.1s;
+    }
+    .btn-icon:active { transform: scale(0.95); }
+    .btn-play { background: var(--col-gen); }
+    .btn-done { background: var(--col-clinic); }
+    .btn-reset { background: #94a3b8; }
+    .btn-icon:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+
+    /* حالة الاكتمال */
+    .task-card.completed { border-color: var(--col-clinic); }
+    .task-card.completed .card-content { opacity: 0.6; }
+    .task-card.completed .subject-strip { background: var(--col-clinic); }
+
+    /* Toast Notification */
+    .toast {
+        visibility: hidden; min-width: 250px; background-color: #333; color: #fff;
+        text-align: center; border-radius: 50px; padding: 16px;
+        position: fixed; z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%);
+        font-size: 1rem; box-shadow: 0 5px 15px rgba(0,0,0,0.3); opacity: 0;
+        transition: opacity 0.5s, bottom 0.5s; display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+    .toast-icon { color: var(--col-clinic); font-size: 1.2rem; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .header-top-row { flex-direction: column; gap: 1rem; align-items: center; text-align: center; }
+        .stats-grid { grid-template-columns: 1fr 1fr; }
+        .track-row { flex-wrap: wrap; gap: 5px; }
+        .dots { width: 100%; justify-content: space-between; }
+        .dot { width: 15%; height: 32px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="toast" class="toast"><i class="fas fa-check-circle toast-icon"></i> <span>أحسنت! خطوة ممتازة</span></div>
+
+<header class="dashboard-header">
+  <div class="container">
+    <div class="header-top-row">
+       <div class="dash-title">
+         <h1><i class="fas fa-microscope"></i> لوحة الميكروبيولوجيا</h1>
+         <span>تتبع شامل • 10 أيام • 17 درس (EN/FR/AR)</span>
+       </div>
+       <button onclick="window.history.back()" class="integrated-back-btn">
+         <i class="fas fa-arrow-right"></i>
+         عودة للصفحة السابقة
+       </button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>إنجاز الدروس</h3>
+        <div class="value" id="progressVal">0%</div>
+      </div>
+      <div class="stat-card">
+        <h3>مجموع المراجعات</h3>
+        <div class="value" id="totalRevisions">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>حل التمارين (QCM)</h3>
+        <div class="value" id="totalQCM">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>الوقت المتبقي</h3>
+        <div class="value" id="countdownToEndOfDay" style="font-family:var(--font-en); font-size:1.4rem">00:00</div>
+      </div>
+    </div>
+    
+    <div class="progress-wrapper">
+      <div class="progress-fill" id="mainProgressBar"></div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="schedule-grid">
+
+    <div class="day-section">
+      <h2 class="day-header">اليوم الأول: أساسيات البكتيريا (1)</h2>
+      <div class="tasks-container">
+        <div class="task-card" id="task1">
+            <div class="subject-strip strip-gen"></div>
+            <div class="card-content">
+                <div class="meta-tags"><span class="badge bg-gen">Générale</span></div>
+                <div class="title-ar">فسيولوجيا البكتيريا: التغذية والنمو</div>
+                <div class="title-en">Bacterial Physiology: Nutrition and Growth</div>
+                <div class="title-fr">Physiologie bactérienne : nutrition et croissance</div>
+            </div>
+            <div class="tracker-box" id="track-task1"></div>
+            <div class="card-footer">
+                <span class="timer" id="t1">02:30:00</span>
+                <div class="actions">
+                    <button class="btn-icon btn-play" onclick="startTimer('task1', 't1', 9000)"><i class="fas fa-play"></i></button>
+                    <button class="btn-icon btn-done" onclick="completeTask('task1')"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon btn-reset" onclick="resetTask('task1', 't1', 9000)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </div>
+        <div class="task-card" id="task2">
+            <div class="subject-strip strip-gen"></div>
+            <div class="card-content">
+                <div class="meta-tags"><span class="badge bg-gen">Générale</span></div>
+                <div class="title-ar">تصنيف البكتيريا</div>
+                <div class="title-en">Bacterial Taxonomy and Classification</div>
+                <div class="title-fr">Taxonomie et classification des bactéries</div>
+            </div>
+            <div class="tracker-box" id="track-task2"></div>
+            <div class="card-footer">
+                <span class="timer" id="t2">02:00:00</span>
+                <div class="actions">
+                    <button class="btn-icon btn-play" onclick="startTimer('task2', 't2', 7200)"><i class="fas fa-play"></i></button>
+                    <button class="btn-icon btn-done" onclick="completeTask('task2')"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon btn-reset" onclick="resetTask('task2', 't2', 7200)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <h2 class="day-header">اليوم الثاني: أساسيات البكتيريا (2)</h2>
+      <div class="tasks-container">
+        <div class="task-card" id="task3">
+            <div class="subject-strip strip-gen"></div>
+            <div class="card-content">
+                <div class="meta-tags"><span class="badge bg-gen">Générale</span></div>
+                <div class="title-ar">الوراثة البكتيرية</div>
+                <div class="title-en">Bacterial Genetics</div>
+                <div class="title-fr">Génétique bactérienne</div>
+            </div>
+            <div class="tracker-box" id="track-task3"></div>
+            <div class="card-footer">
+                <span class="timer" id="t3">02:30:00</span>
+                <div class="actions">
+                    <button class="btn-icon btn-play" onclick="startTimer('task3', 't3', 9000)"><i class="fas fa-play"></i></button>
+                    <button class="btn-icon btn-done" onclick="completeTask('task3')"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon btn-reset" onclick="resetTask('task3', 't3', 9000)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </div>
+        <div class="task-card" id="task4">
+            <div class="subject-strip strip-gen"></div>
+            <div class="card-content">
+                <div class="meta-tags"><span class="badge bg-gen">Générale</span></div>
+                <div class="title-ar">القدرة الممرضة والصراع بين المضيف والبكتيريا</div>
+                <div class="title-en">Pathogenicity and Host-Bacteria Conflict</div>
+                <div class="title-fr">Pouvoir pathogène et conflit hôte bactérie</div>
+            </div>
+            <div class="tracker-box" id="track-task4"></div>
+            <div class="card-footer">
+                <span class="timer" id="t4">02:30:00</span>
+                <div class="actions">
+                    <button class="btn-icon btn-play" onclick="startTimer('task4', 't4', 9000)"><i class="fas fa-play"></i></button>
+                    <button class="btn-icon btn-done" onclick="completeTask('task4')"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon btn-reset" onclick="resetTask('task4', 't4', 9000)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <h2 class="day-header">اليوم الثالث: المضادات والميكروبيوم</h2>
+      <div class="tasks-container">
+        <div class="task-card" id="task5">
+            <div class="subject-strip strip-clinic"></div>
+            <div class="card-content">
+                <div class="meta-tags"><span class="badge bg-clinic">Antibiotiques</span></div>
+                <div class="title-ar">المضادات الحيوية</div>
+                <div class="title-en">Antibiotics</div>
+                <div class="title-fr">Les antibiotiques</div>
+            </div>
+            <div class="tracker-box" id="track-task5"></div>
+            <div class="card-footer">
+                <span class="timer" id="t5">03:00:00</span>
+                <div class="actions">
+                    <button class="btn-icon btn-play" onclick="startTimer('task5', 't5', 10800)"><i class="fas fa-play"></i></button>
+                    <button class="btn-icon btn-done" onclick="completeTask('task5')"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon btn-reset" onclick="resetTask('task5', 't5', 10800)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </div>
+        <div class="task-card" id="task6">
+            <div class="subject-strip strip-gen"></div>
+            <div class="card-content">
+                <div class="meta-tags"><span class="badge bg-gen">Générale</span></div>
+                <div class="title-ar">الميكروبيوم البشري</div>
+                <div class="title-en">Human Microbiome</div>
+                <div class="title-fr">Microbiote humain</div>
+            </div>
+            <div class="tracker-box" id="track-task6"></div>
+            <div class="card-footer">
+                <span class="timer" id="t6">02:00:00</span>
+                <div class="actions">
+                    <button class="btn-icon btn-play" onclick="startTimer('task6', 't6', 7200)"><i class="fas fa-play"></i></button>
+                    <button class="btn-icon btn-done" onclick="completeTask('task6')"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon btn-reset" onclick="resetTask('task6', 't6', 7200)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <h2 class="day-header">اليوم الرابع: بكتيريا غرام موجب</h2>
+      <div class="tasks-container">
+        <div class="task-card" id="task7">
+            <div class="subject-strip strip-spec"></div>
+            <div class="card-content">
+                <div class="meta-tags"><span class="badge bg-spec">Spéciale</span></div>
+                <div class="title-ar">البكتيريا موجبة الغرام (Gram +)</div>
+                <div class="title-en">Gram-Positive Bacteria</div>
+                <div class="title-fr">Les bactéries à Gram positif</div>
+            </div>
+            <div class="tracker-box" id="track-task7"></div>
+            <div class="card-footer">
+                <span class="timer" id="t7">04:00:00</span>
+                <div class="actions">
+                    <button class="btn-icon btn-play" onclick="startTimer('task7', 't7', 14400)"><i class="fas fa-play"></i></button>
+                    <button class="btn-icon btn-done" onclick="completeTask('task7')"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon btn-reset" onclick="resetTask('task7', 't7', 14400)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <h2 class="day-header">اليوم الخامس: بكتيريا غرام سالب</h2>
+      <div class="tasks-container">
+        <div class="task-card" id="task8">
+            <div class="subject-strip strip-spec"></div>
+            <div class="card-content">
+                <div class="meta-tags"><span class="badge bg-spec">Spéciale</span></div>
+                <div class="title-ar">البكتيريا سالبة الغرام (Gram -)</div>
+                <div class="title-en">Gram-Negative Bacteria</div>
+                <div class="title-fr">Les bactéries à Gram négatif</div>
+            </div>
+            <div class="tracker-box" id="track-task8"></div>
+            <div class="card-footer">
+                <span class="timer" id="t8">04:00:00</span>
+                <div class="actions">
+                    <button class="btn-icon btn-play" onclick="startTimer('task8', 't8', 14400)"><i class="fas fa-play"></i></button>
+                    <button class="btn-icon btn-done" onclick="completeTask('task8')"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon btn-reset" onclick="resetTask('task8', 't8', 14400)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <h2 class="day-header">اليوم السادس: بكتيريا خاصة ولاهوائية</h2>
+      <div class="tasks-container">
+        <div class="task-card" id="task9">
+            <div class="subject-strip strip-spec"></div>
+            <div class="card-content">
+                <div class="meta-tags"><span class="badge bg-spec">Spéciale</span></div>
+                <div class="title-ar">البكتيريا غير التقليدية وداخل خلوية (ATNC)</div>
+                <div class="title-en">Atypical and Intracellular Bacteria</div>
+                <div class="title-fr">ATNC et bactéries intracellulaires</div>
+            </div>
+            <div class="tracker-box" id="track-task9"></div>
+            <div class="card-footer">
+                <span class="timer" id="t9">02:30:00</span>
+                <div class="actions">
+                    <button class="btn-icon btn-play" onclick="startTimer('task9', 't9', 9000)"><i class="fas fa-play"></i></button>
+                    <button class="btn-icon btn-done" onclick="completeTask('task9')"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon btn-reset" onclick="resetTask('task9', 't9', 9000)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </div>
+        <div class="task-card" id="task10">
+            <div class="subject-strip strip-spec"></div>
+            <div class="card-content">
+                <div class="meta-tags"><span class="badge bg-spec">Spéciale</span></div>
+                <div class="title-ar">البكتيريا اللاهوائية</div>
+                <div class="title-en">Anaerobic Bacteria</div>
+                <div class="title-fr">Les anaérobies</div>
+            </div>
+            <div class="tracker-box" id="track-task10"></div>
+            <div class="card-footer">
+                <span class="timer" id="t10">02:30:00</span>
+                <div class="actions">
+                    <button class="btn-icon btn-play" onclick="startTimer('task10', 't10', 9000)"><i class="fas fa-play"></i></button>
+                    <button class="btn-icon btn-done" onclick="completeTask('task10')"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon btn-reset" onclick="resetTask('task10', 't10', 9000)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <h2 class="day-header">اليوم السابع: علم الفيروسات (1)</h2>
+      <div class="tasks-container">
+        <div class="task-card" id="task11">
+            <div class="subject-strip strip-viro"></div>
+            <div class="card-content">
+                <div class="meta-tags"><span class="badge bg-viro">Virologie</span></div>
+                <div class="title-ar">بنية وتصنيف الفيروسات</div>
+                <div class="title-en">Virus Structure and Classification</div>
+                <div class="title-fr">Structure et classification des virus</div>
+            </div>
+            <div class="tracker-box" id="track-task11"></div>
+            <div class="card-footer">
+                <span class="timer" id="t11">02:30:00</span>
+                <div class="actions">
+                    <button class="btn-icon btn-play" onclick="startTimer('task11', 't11', 9000)"><i class="fas fa-play"></i></button>
+                    <button class="btn-icon btn-done" onclick="completeTask('task11')"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon btn-reset" onclick="resetTask('task11', 't11', 9000)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </div>
+        <div class="task-card" id="task12">
+            <div class="subject-strip strip-viro"></div>
+            <div class="card-content">
+                <div class="meta-tags"><span class="badge bg-viro">Virologie</span></div>
+                <div class="title-ar">فيروسات الحمض النووي (DNA)</div>
+                <div class="title-en">DNA Viruses</div>
+                <div class="title-fr">Virus à ADN</div>
+            </div>
+            <div class="tracker-box" id="track-task12"></div>
+            <div class="card-footer">
+                <span class="timer" id="t12">03:00:00</span>
+                <div class="actions">
+                    <button class="btn-icon btn-play" onclick="startTimer('task12', 't12', 10800)"><i class="fas fa-play"></i></button>
+                    <button class="btn-icon btn-done" onclick="completeTask('task12')"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon btn-reset" onclick="resetTask('task12', 't12', 10800)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <h2 class="day-header">اليوم الثامن: علم الفيروسات (2)</h2>
+      <div class="tasks-container">
+        <div class="task-card" id="task13">
+            <div class="subject-strip strip-viro"></div>
+            <div class="card-content">
+                <div class="meta-tags"><span class="badge bg-viro">Virologie</span></div>
+                <div class="title-ar">فيروسات الحمض النووي الريبي (ARN)</div>
+                <div class="title-en">RNA Viruses</div>
+                <div class="title-fr">Virus à ARN</div>
+            </div>
+            <div class="tracker-box" id="track-task13"></div>
+            <div class="card-footer">
+                <span class="timer" id="t13">03:30:00</span>
+                <div class="actions">
+                    <button class="btn-icon btn-play" onclick="startTimer('task13', 't13', 12600)"><i class="fas fa-play"></i></button>
+                    <button class="btn-icon btn-done" onclick="completeTask('task13')"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon btn-reset" onclick="resetTask('task13', 't13', 12600)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <h2 class="day-header">اليوم التاسع: العدوى والتشخيص</h2>
+      <div class="tasks-container">
+        <div class="task-card" id="task14">
+            <div class="subject-strip strip-clinic"></div>
+            <div class="card-content">
+                <div class="meta-tags"><span class="badge bg-clinic">Clinique</span></div>
+                <div class="title-ar">العدوى المرتبطة بالرعاية الصحية والتعقيم</div>
+                <div class="title-en">Healthcare-Associated Infections and Sterilization</div>
+                <div class="title-fr">Infections associées aux soins et stérilisation</div>
+            </div>
+            <div class="tracker-box" id="track-task14"></div>
+            <div class="card-footer">
+                <span class="timer" id="t14">02:30:00</span>
+                <div class="actions">
+                    <button class="btn-icon btn-play" onclick="startTimer('task14', 't14', 9000)"><i class="fas fa-play"></i></button>
+                    <button class="btn-icon btn-done" onclick="completeTask('task14')"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon btn-reset" onclick="resetTask('task14', 't14', 9000)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </div>
+        <div class="task-card" id="task15">
+            <div class="subject-strip strip-clinic"></div>
+            <div class="card-content">
+                <div class="meta-tags"><span class="badge bg-clinic">Diagnostic</span></div>
+                <div class="title-ar">التشخيص البيولوجي</div>
+                <div class="title-en">Biological Diagnosis</div>
+                <div class="title-fr">Diagnostic biologique</div>
+            </div>
+            <div class="tracker-box" id="track-task15"></div>
+            <div class="card-footer">
+                <span class="timer" id="t15">02:30:00</span>
+                <div class="actions">
+                    <button class="btn-icon btn-play" onclick="startTimer('task15', 't15', 9000)"><i class="fas fa-play"></i></button>
+                    <button class="btn-icon btn-done" onclick="completeTask('task15')"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon btn-reset" onclick="resetTask('task15', 't15', 9000)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <h2 class="day-header">اليوم العاشر: المراجعة النهائية</h2>
+      <div class="tasks-container">
+        <div class="task-card" id="task16">
+            <div class="subject-strip strip-review"></div>
+            <div class="card-content">
+                <div class="meta-tags"><span class="badge bg-review">Révision</span></div>
+                <div class="title-ar">مراجعة شاملة للمنهج</div>
+                <div class="title-en">Comprehensive Curriculum Review</div>
+                <div class="title-fr">Révision complète</div>
+            </div>
+            <div class="tracker-box" id="track-task16"></div>
+            <div class="card-footer">
+                <span class="timer" id="t16">02:00:00</span>
+                <div class="actions">
+                    <button class="btn-icon btn-play" onclick="startTimer('task16', 't16', 7200)"><i class="fas fa-play"></i></button>
+                    <button class="btn-icon btn-done" onclick="completeTask('task16')"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon btn-reset" onclick="resetTask('task16', 't16', 7200)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </div>
+        <div class="task-card" id="task17">
+            <div class="subject-strip strip-review"></div>
+            <div class="card-content">
+                <div class="meta-tags"><span class="badge bg-review">QCM</span></div>
+                <div class="title-ar">حل أسئلة وتدريبات (QCM)</div>
+                <div class="title-en">QCM Solving and Exercises</div>
+                <div class="title-fr">Pratique QCM & Exercices</div>
+            </div>
+            <div class="tracker-box" id="track-task17"></div>
+            <div class="card-footer">
+                <span class="timer" id="t17">02:30:00</span>
+                <div class="actions">
+                    <button class="btn-icon btn-play" onclick="startTimer('task17', 't17', 9000)"><i class="fas fa-play"></i></button>
+                    <button class="btn-icon btn-done" onclick="completeTask('task17')"><i class="fas fa-check"></i></button>
+                    <button class="btn-icon btn-reset" onclick="resetTask('task17', 't17', 9000)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const TOTAL_TASKS = 17;
+const LS_KEYS = {
+    STATUS: 'status_micro_pro_v2',       
+    TIMERS: 'timers_micro_pro_v2',       
+    TRACKING: 'tracking_micro_pro_v2'    
+};
+
+let activeTimers = {};
+let trackingData = {};
+
+document.addEventListener('DOMContentLoaded', () => {
+    injectTrackers();
+    loadTrackingData();
+    loadState();
+    initializeTimers();
+    updateDashboard();
+    startEndOfDayCountdown();
+});
+
+// --- نظام التتبع (Tracking) ---
+function injectTrackers() {
+    const cards = document.querySelectorAll('.task-card');
+    cards.forEach(card => {
+        const trackDiv = card.querySelector('.tracker-box');
+        if (!trackDiv) return;
+        const taskId = card.id;
+        
+        let revHtml = `<div class="track-row dots-rev"><div class="track-label lbl-rev"><i class="fas fa-book-open"></i> مراجعة</div><div class="dots">`;
+        for(let i=1; i<=6; i++) {
+            revHtml += `<button class="dot" onclick="updateTracker('${taskId}', 'rev', ${i})">${i}</button>`;
+        }
+        revHtml += `</div></div>`;
+        
+        let qcmHtml = `<div class="track-row dots-qcm"><div class="track-label lbl-qcm"><i class="fas fa-pen-alt"></i> تمارين</div><div class="dots">`;
+        for(let i=1; i<=5; i++) {
+            qcmHtml += `<button class="dot" onclick="updateTracker('${taskId}', 'qcm', ${i})">${i}</button>`;
+        }
+        qcmHtml += `</div></div>`;
+        
+        trackDiv.innerHTML = revHtml + qcmHtml;
+    });
+}
+
+function loadTrackingData() {
+    const stored = localStorage.getItem(LS_KEYS.TRACKING);
+    if (stored) {
+        trackingData = JSON.parse(stored);
+    }
+    Object.keys(trackingData).forEach(taskId => {
+        const data = trackingData[taskId];
+        if (data.rev) applyTrackerUI(taskId, 'rev', data.rev);
+        if (data.qcm) applyTrackerUI(taskId, 'qcm', data.qcm);
+    });
+}
+
+function updateTracker(taskId, type, value) {
+    if (!trackingData[taskId]) trackingData[taskId] = { rev: 0, qcm: 0 };
+    
+    // Toggle Logic: Unselect if clicked again
+    if (trackingData[taskId][type] === value) {
+        trackingData[taskId][type] = 0;
+    } else {
+        trackingData[taskId][type] = value;
+        // Celebration on max level
+        if ( (type === 'rev' && value === 6) || (type === 'qcm' && value === 5) ) {
+            triggerConfetti();
+        }
+    }
+    
+    localStorage.setItem(LS_KEYS.TRACKING, JSON.stringify(trackingData));
+    applyTrackerUI(taskId, type, trackingData[taskId][type]);
+    updateDashboard();
+}
+
+function applyTrackerUI(taskId, type, value) {
+    const card = document.getElementById(taskId);
+    if (!card) return;
+    const containerClass = type === 'rev' ? '.dots-rev' : '.dots-qcm';
+    const container = card.querySelector(containerClass);
+    if (!container) return;
+    
+    const btns = container.querySelectorAll('.dot');
+    btns.forEach((btn, index) => {
+        const btnVal = index + 1;
+        if (btnVal <= value) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+// --- Dashboard & Timer Logic ---
+function updateDashboard() {
+    const completedCount = document.querySelectorAll('.task-card.completed').length;
+    const progress = (completedCount / TOTAL_TASKS) * 100;
+    
+    document.getElementById('progressVal').innerText = Math.round(progress) + '%';
+    document.getElementById('mainProgressBar').style.width = progress + '%';
+    
+    let totalRev = 0;
+    let totalQcm = 0;
+    Object.values(trackingData).forEach(data => {
+        totalRev += (data.rev || 0);
+        totalQcm += (data.qcm || 0);
+    });
+    
+    document.getElementById('totalRevisions').innerText = totalRev;
+    document.getElementById('totalQCM').innerText = totalQcm;
+}
+
+function formatTime(seconds) {
+    if (isNaN(seconds) || seconds < 0) return "00:00:00";
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    return [h, m, s].map(v => v.toString().padStart(2, '0')).join(':');
+}
+
+function saveState() {
+    const tasksStatus = {};
+    document.querySelectorAll('.task-card').forEach(card => {
+        tasksStatus[card.id] = card.classList.contains('completed');
+    });
+    localStorage.setItem(LS_KEYS.STATUS, JSON.stringify(tasksStatus));
+    updateDashboard();
+}
+
+function loadState() {
+    const tasksStatus = JSON.parse(localStorage.getItem(LS_KEYS.STATUS));
+    if (tasksStatus) {
+        Object.keys(tasksStatus).forEach(taskId => {
+            const taskElement = document.getElementById(taskId);
+            if (taskElement && tasksStatus[taskId]) {
+                taskElement.classList.add('completed');
+                const btnDone = taskElement.querySelector('.btn-done');
+                const btnPlay = taskElement.querySelector('.btn-play');
+                if(btnDone) btnDone.disabled = true;
+                if(btnPlay) btnPlay.disabled = true;
+            }
+        });
+    }
+}
+
+function startTimer(taskId, timerId, initialSeconds) {
+    const taskElement = document.getElementById(taskId);
+    if (taskElement.classList.contains('completed') || activeTimers[timerId]) return;
+    
+    let timersState = JSON.parse(localStorage.getItem(LS_KEYS.TIMERS)) || {};
+    if(timersState[timerId]) delete timersState[timerId];
+
+    const endTime = Date.now() + initialSeconds * 1000;
+    timersState[timerId] = { endTime, taskId, initialSeconds };
+    localStorage.setItem(LS_KEYS.TIMERS, JSON.stringify(timersState));
+    
+    runTimer(taskId, timerId);
+}
+
+function runTimer(taskId, timerId) {
+    const taskElement = document.getElementById(taskId);
+    if (!taskElement) return;
+    const timerElement = document.getElementById(timerId);
+    const startBtn = taskElement.querySelector('.btn-play');
+    if (startBtn) startBtn.disabled = true;
+
+    if (activeTimers[timerId]) clearInterval(activeTimers[timerId]);
+
+    activeTimers[timerId] = setInterval(() => {
+        const timersState = JSON.parse(localStorage.getItem(LS_KEYS.TIMERS)) || {};
+        const timerData = timersState[timerId];
+        
+        if (!timerData) {
+            clearInterval(activeTimers[timerId]);
+            delete activeTimers[timerId];
+            return;
+        }
+
+        const now = Date.now();
+        let secondsLeft = Math.round((timerData.endTime - now) / 1000);
+
+        if (secondsLeft <= 0) {
+            clearInterval(activeTimers[timerId]);
+            delete activeTimers[timerId];
+            delete timersState[timerId];
+            localStorage.setItem(LS_KEYS.TIMERS, JSON.stringify(timersState));
+            timerElement.textContent = formatTime(0);
+            if (startBtn) startBtn.disabled = false;
+        } else {
+            timerElement.textContent = formatTime(secondsLeft);
+        }
+    }, 1000);
+}
+
+function completeTask(taskId) {
+    const taskElement = document.getElementById(taskId);
+    if (!taskElement) return;
+    taskElement.classList.add('completed');
+    
+    const btnDone = taskElement.querySelector('.btn-done');
+    const btnPlay = taskElement.querySelector('.btn-play');
+    if(btnDone) btnDone.disabled = true;
+    if(btnPlay) btnPlay.disabled = true;
+
+    const timerId = taskElement.querySelector('.timer').id;
+    if (activeTimers[timerId]) {
+        clearInterval(activeTimers[timerId]);
+        delete activeTimers[timerId];
+    }
+    let timersState = JSON.parse(localStorage.getItem(LS_KEYS.TIMERS)) || {};
+    delete timersState[timerId];
+    localStorage.setItem(LS_KEYS.TIMERS, JSON.stringify(timersState));
+    
+    saveState();
+    triggerConfetti();
+    showToast();
+}
+
+function resetTask(taskId, timerId, initialSeconds) {
+    const taskElement = document.getElementById(taskId);
+    if (!taskElement) return;
+    taskElement.classList.remove('completed');
+    
+    const buttons = taskElement.querySelectorAll('.btn-icon');
+    buttons.forEach(btn => btn.disabled = false);
+    
+    if (activeTimers[timerId]) {
+        clearInterval(activeTimers[timerId]);
+        delete activeTimers[timerId];
+    }
+    let timersState = JSON.parse(localStorage.getItem(LS_KEYS.TIMERS)) || {};
+    delete timersState[timerId];
+    localStorage.setItem(LS_KEYS.TIMERS, JSON.stringify(timersState));
+    
+    document.getElementById(timerId).textContent = formatTime(initialSeconds);
+    saveState();
+}
+
+function initializeTimers() {
+    const timersState = JSON.parse(localStorage.getItem(LS_KEYS.TIMERS)) || {};
+    const now = Date.now();
+    for (const timerId in timersState) {
+        const { endTime, taskId, initialSeconds } = timersState[timerId];
+        const remainingSeconds = Math.max(0, Math.floor((endTime - now) / 1000));
+        const taskElement = document.getElementById(taskId);
+
+        if (taskElement && !taskElement.classList.contains('completed')) {
+            document.getElementById(timerId).textContent = formatTime(remainingSeconds);
+            if (remainingSeconds > 0) {
+                 runTimer(taskId, timerId);
+            } else {
+                delete timersState[timerId];
+            }
+        } else {
+             delete timersState[timerId];
+        }
+    }
+    localStorage.setItem(LS_KEYS.TIMERS, JSON.stringify(timersState));
+}
+
+function startEndOfDayCountdown() {
+    const countdownElement = document.getElementById('countdownToEndOfDay');
+    function updateCountdown() {
+        const now = new Date();
+        const endOfDay = new Date(now);
+        endOfDay.setHours(24, 0, 0, 0);
+        const totalSeconds = Math.floor((endOfDay - now) / 1000);
+        
+        if (totalSeconds < 0) {
+            countdownElement.textContent = "00:00";
+            return;
+        }
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        countdownElement.textContent = 
+            `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    }
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+}
+
+function triggerConfetti() {
+    confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+    });
+}
+
+function showToast() {
+    const toast = document.getElementById("toast");
+    toast.className = "toast show";
+    setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+}
+</script>
+
+</body>
+</html>

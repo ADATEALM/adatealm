@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم المشرف - أداة علم</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: { fontFamily: { sans: ['Cairo', 'sans-serif'] }, colors: { brand: '#3b82f6' } }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- Sidebar / Nav -->
+    <div class="flex h-screen overflow-hidden bg-gray-50">
+
+        <!-- Mobile Overlay -->
+        <div id="mobileOverlay" onclick="toggleSidebar()"
+            class="fixed inset-0 bg-black/50 z-20 hidden md:hidden backdrop-blur-sm transition-opacity"></div>
+
+        <!-- Sidebar -->
+        <aside id="sidebar"
+            class="fixed md:static inset-y-0 right-0 w-72 bg-[#0f172a] text-white transform translate-x-full md:translate-x-0 transition-transform duration-300 z-30 shadow-2xl flex flex-col">
+            <div class="p-8 text-center border-b border-slate-700 bg-[#1e293b]">
+                <h1
+                    class="text-2xl font-black bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                    أداة علم</h1>
+                <span
+                    class="text-xs bg-red-500/20 text-red-300 border border-red-500/50 px-3 py-1 rounded-full mt-2 inline-block font-bold">لوحة
+                    التحكم</span>
+            </div>
+            <nav class="flex-1 p-4 space-y-3 overflow-y-auto">
+                <a href="#"
+                    class="flex items-center gap-4 p-4 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-500/30 transition hover:scale-[1.02]">
+                    <i class="fa-solid fa-users text-lg"></i> <span class="font-bold">المستخدمين</span>
+                </a>
+                <a href="#" class="flex items-center gap-4 p-4 hover:bg-slate-800 rounded-xl text-slate-400 transition">
+                    <i class="fa-solid fa-chart-pie text-lg"></i> <span class="font-bold">الإحصائيات</span>
+                </a>
+                <a href="index.html"
+                    class="flex items-center gap-4 p-4 hover:bg-red-500/10 text-red-400 rounded-xl transition mt-auto border border-red-500/20">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i> <span class="font-bold">خروج</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col overflow-y-auto relative w-full">
+
+            <header
+                class="bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-gray-100 p-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleSidebar()"
+                        class="md:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg"><i
+                            class="fa-solid fa-bars text-xl"></i></button>
+                    <h2 class="text-xl font-black text-slate-800">إدارة المستخدمين - الوصول المتقدم</h2>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="adminName" class="text-sm font-bold text-slate-600 hidden sm:inline-block">...</span>
+                </div>
+            </header>
+
+            <div class="p-4 md:p-8">
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between hover:shadow-md transition">
+                        <div>
+                            <div class="text-gray-400 text-xs font-bold mb-1">إجمالي المستخدمين</div>
+                            <div class="text-3xl font-black text-slate-800" id="totalUsers">-</div>
+                        </div>
+                        <div class="bg-blue-50 text-blue-500 p-3 rounded-xl"><i class="fa-solid fa-users"></i></div>
+                    </div>
+                    <div
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between hover:shadow-md transition">
+                        <div>
+                            <div class="text-gray-400 text-xs font-bold mb-1">المشتركين (أي تخصص)</div>
+                            <div class="text-3xl font-black text-emerald-600" id="proUsers">-</div>
+                        </div>
+                        <div class="bg-emerald-50 text-emerald-500 p-3 rounded-xl"><i class="fa-solid fa-crown"></i>
+                        </div>
+                    </div>
+                    <div
+                        class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between hover:shadow-md transition">
+                        <div>
+                            <div class="text-gray-400 text-xs font-bold mb-1">الأرباح المقدرة</div>
+                            <div class="text-3xl font-black text-orange-600" id="revenue">0 DZD</div>
+                        </div>
+                        <div class="bg-orange-50 text-orange-500 p-3 rounded-xl"><i class="fa-solid fa-coins"></i></div>
+                    </div>
+                </div>
+
+                <!-- Users Table (Desktop) / Cards (Mobile) -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="p-5 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                        <h3 class="font-bold text-slate-700">قائمة المشتركين وصلاحياتهم</h3>
+                        <button onclick="loadUsers()"
+                            class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white hover:shadow-sm text-blue-600 transition"><i
+                                class="fa-solid fa-rotate"></i></button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right hidden md:table">
+                            <thead class="bg-gray-50 text-gray-400 text-xs font-bold uppercase tracking-wider">
+                                <tr>
+                                    <th class="p-4">المستخدم</th>
+                                    <th class="p-4">التخصص</th>
+                                    <th class="p-4 w-1/3">صلاحيات الوصول</th>
+                                    <th class="p-4">عدد الخطط</th>
+                                    <th class="p-4">إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersList" class="divide-y divide-gray-50 text-sm">
+                                <!-- Data -->
+                            </tbody>
+                        </table>
+
+                        <!-- Mobile View -->
+                        <div id="usersGridMobile" class="md:hidden p-4 space-y-3">
+                            <!-- Cards injected via JS -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('mobileOverlay');
+            sb.classList.toggle('translate-x-full');
+            ov.classList.toggle('hidden');
+        }
+    </script>
+
+    <script type="module">
+        import { db, auth, getDoc, doc, setDoc, onAuthStateChanged, checkAdminStatus } from './js/utils.js';
+        import { collection, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let currentUser = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                const isAdmin = await checkAdminStatus(user);
+
+                if (isAdmin) {
+                    document.getElementById('adminName').innerText = user.displayName || user.email;
+                    loadUsers();
+                } else {
+                    document.body.innerHTML = '<div class="h-screen flex items-center justify-center font-bold text-xl text-red-500">Access Denied</div>';
+                }
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        window.loadUsers = async () => {
+            const list = document.getElementById('usersList');
+            const grid = document.getElementById('usersGridMobile');
+
+            list.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-gray-400"><i class="fa-solid fa-spinner fa-spin"></i></td></tr>';
+            grid.innerHTML = '<div class="text-center p-8"><i class="fa-solid fa-spinner fa-spin text-brand"></i></div>';
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "users"));
+                let htmlRows = '';
+                let htmlCards = '';
+                let count = 0;
+                let proCount = 0;
+                let totalRev = 0;
+
+                querySnapshot.forEach((doc) => {
+                    const u = doc.data();
+                    count++;
+
+                    // Access List Logic
+                    const accessList = u.access_list || [];
+                    const isPro = accessList.length > 0;
+
+                    if (isPro) {
+                        proCount++;
+                        // Estimate revenue: 1000 DZD per code (Approx)
+                        totalRev += (accessList.length * 1000);
+                    }
+
+                    // Render Badges for Codes
+                    const badges = accessList.length > 0
+                        ? accessList.map(code => `<span class="bg-blue-100 text-blue-700 mx-1 px-2 py-0.5 rounded text-[10px] font-mono border border-blue-200 inline-block mb-1">${code}</span>`).join('')
+                        : '<span class="text-gray-400 text-xs">لا يوجد</span>';
+
+                    // Action Button (Manage)
+                    const btn = `
+                        <button onclick="manageAccess('${doc.id}', '${accessList.join(',')}')" class="w-full text-xs font-bold px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition shadow-sm">
+                            <i class="fa-solid fa-gear"></i> تعديل الصلاحيات
+                        </button>
+                    `;
+
+                    // Table Row
+                    htmlRows += `
+                        <tr class="hover:bg-blue-50/30 transition group">
+                            <td class="p-4">
+                                <div class="font-bold text-slate-800">${u.displayName || 'No Name'}</div>
+                                <div class="text-xs text-slate-400 email-text">${u.email}</div>
+                            </td>
+                            <td class="p-4"><span class="bg-indigo-50 text-indigo-600 px-2 py-1 rounded text-xs font-bold">${u.specialization || '-'}</span></td>
+                            <td class="p-4">${badges}</td>
+                            <td class="p-4 text-xs font-mono text-slate-500 text-center">${accessList.length}</td>
+                            <td class="p-4" width="100">${btn}</td>
+                        </tr>
+                    `;
+
+                    // Mobile Card
+                    htmlCards += `
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-3">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="font-bold text-slate-800 text-lg">${u.displayName || 'No Name'}</div>
+                                    <div class="text-xs text-slate-400 font-mono">${u.email}</div>
+                                </div>
+                                <span class="bg-indigo-50 text-indigo-600 px-2 py-1 rounded text-[10px] font-bold">${u.specialization || '-'}</span>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <div class="text-[10px] text-gray-400 font-bold mb-1">الوصول الحالي:</div>
+                                <div class="flex flex-wrap gap-1">${badges}</div>
+                            </div>
+                            ${btn}
+                        </div>
+                    `;
+                });
+
+                list.innerHTML = htmlRows;
+                grid.innerHTML = htmlCards;
+                document.getElementById('totalUsers').innerText = count;
+                document.getElementById('proUsers').innerText = proCount;
+                document.getElementById('revenue').innerText = totalRev.toLocaleString() + ' DZD';
+
+            } catch (err) {
+                console.error(err);
+                if (list) list.innerHTML = `<tr><td colspan="5" class="p-4 text-red-500">${err.message}</td></tr>`;
+            }
+        };
+
+        window.manageAccess = async (uid, currentString) => {
+            const newString = prompt("أدخل كود التخصصات (مثل MED01, DENT02) مفصولة بفواصل.\nاتركها فارغة لإلغاء جميع الاشتراكات.", currentString);
+            if (newString === null) return; // Cancelled
+
+            // Parse and Clean
+            const newList = newString.split(',').map(s => s.trim().toUpperCase()).filter(s => s.length > 0);
+
+            try {
+                await updateDoc(doc(db, "users", uid), {
+                    access_list: newList
+                });
+                loadUsers(); // Refresh
+                alert("تم تحديث الصلاحيات بنجاح");
+            } catch (e) {
+                alert("Error: " + e.message);
+            }
+        };
+    </script>
+</body>
+
+</html>

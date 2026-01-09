@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <title>الذاكرة PRO - السحابة</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Tajawal', 'sans-serif'] },
+                    colors: { brand: { DEFAULT: '#2563eb', dark: '#3b82f6' } },
+                    animation: { 'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite' }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+        }
+
+        .dark .glass {
+            background: rgba(30, 41, 59, 0.95);
+        }
+
+        .pro-badge {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.7em;
+            font-weight: 900;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-gray-50 dark:bg-slate-900 text-slate-800 transition-colors pb-28 selection:bg-brand selection:text-white font-sans">
+
+    <!-- Header -->
+    <header class="fixed top-0 w-full z-40 glass border-b border-gray-200 dark:border-gray-700">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 bg-brand rounded-xl flex items-center justify-center text-white shadow-lg shadow-brand/30">
+                    <i class="fas fa-brain animate-pulse-slow"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-lg dark:text-white">الذاكرة <span class="pro-badge">CLOUD</span></h1>
+                    <div class="text-[10px] text-gray-500 font-bold flex items-center gap-1">
+                        <i class="fas fa-fire text-orange-500"></i> <span id="streakCount">0</span> يوم
+                        <span class="w-1 h-1 bg-gray-300 rounded-full mx-1"></span>
+                        <span id="syncStatus" class="text-green-500">متصل <i class="fa-solid fa-wifi"></i></span>
+                    </div>
+                </div>
+            </div>
+            <a href="index.html" class="text-gray-400 hover:text-brand"><i class="fa-solid fa-house"></i></a>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <main id="mainContent" class="container mx-auto px-4 mt-24 max-w-2xl min-h-screen">
+        <div class="text-center py-20">
+            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-brand"></i>
+            <p class="mt-4 text-gray-500">جاري تحميل بياناتك من السحابة...</p>
+        </div>
+    </main>
+
+    <!-- FAB -->
+    <button onclick="openAddModal()"
+        class="fixed bottom-24 left-6 bg-brand text-white w-14 h-14 rounded-2xl flex items-center justify-center text-2xl z-40 shadow-lg shadow-brand/40 transition hover:scale-110">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <!-- Nav -->
+    <nav class="fixed bottom-0 w-full glass border-t border-gray-200 dark:border-gray-700 z-50 pb-safe">
+        <div class="flex justify-around py-3">
+            <button onclick="renderLimitLessHome()" class="text-brand flex flex-col items-center"><i
+                    class="fas fa-home text-xl"></i></button>
+            <button onclick="alert('قريباً في النسخة القادمة')" class="text-gray-400 flex flex-col items-center"><i
+                    class="fas fa-chart-pie text-xl"></i></button>
+        </div>
+    </nav>
+
+    <!-- Modals (Simplified for brevity, dynamic injection used in real app usually, but hardcoded here) -->
+    <div id="addModal" class="fixed inset-0 z-[60] hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onclick="document.getElementById('addModal').classList.add('hidden')"></div>
+        <div class="absolute bottom-0 w-full bg-white dark:bg-slate-800 rounded-t-3xl p-6 animate-slide-up">
+            <h3 class="font-bold text-xl mb-4 dark:text-white">إضافة درس جديد</h3>
+            <input type="text" id="inpTitle" placeholder="عنوان الدرس"
+                class="w-full p-4 bg-gray-100 dark:bg-slate-700 rounded-xl mb-3 outline-none dark:text-white">
+            <input type="text" id="inpSubject" placeholder="المادة"
+                class="w-full p-4 bg-gray-100 dark:bg-slate-700 rounded-xl mb-3 outline-none dark:text-white">
+            <button onclick="addNewLesson()"
+                class="w-full bg-brand text-white py-4 rounded-xl font-bold hover:bg-blue-600">حفظ في السحابة</button>
+        </div>
+    </div>
+
+    <!-- Logic -->
+    <script type="module">
+        import { db, auth, getDoc, doc, setDoc, onAuthStateChanged, checkProStatus } from './js/utils.js';
+
+        let appData = { lessons: [] };
+        let currentUser = null;
+
+        // Init
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) return window.location.href = 'login.html';
+
+            // Check Pro
+            const isPro = await checkProStatus(user.uid);
+            if (!isPro) {
+                Swal.fire({
+                    icon: 'lock',
+                    title: 'ميزة مدفوعة',
+                    text: 'عذراً، نظام الذاكرة السحابي متاح فقط للمشتركين.',
+                    confirmButtonText: 'ترقية الحساب',
+                    confirmButtonColor: '#2563eb',
+                    allowOutsideClick: false
+                }).then(() => window.location.href = 'pricing.html');
+                return;
+            }
+
+            currentUser = user;
+            loadData();
+        });
+
+        async function loadData() {
+            try {
+                const docRef = doc(db, "users", currentUser.uid);
+                const snap = await getDoc(docRef);
+
+                if (snap.exists() && snap.data().srs_data) {
+                    appData = snap.data().srs_data;
+                } else {
+                    // Initialize empty
+                    appData = { lessons: [], streak: 0 };
+                    await saveData();
+                }
+                renderLimitLessHome();
+
+            } catch (err) {
+                console.error(err);
+                Swal.fire("خطأ", "فشل تحميل البيانات من السحابة", "error");
+            }
+        }
+
+        async function saveData() {
+            const syncLabel = document.getElementById('syncStatus');
+            syncLabel.innerHTML = 'جاري الحفظ... <i class="fa-solid fa-sync fa-spin"></i>';
+            syncLabel.className = 'text-yellow-500';
+
+            try {
+                await setDoc(doc(db, "users", currentUser.uid), {
+                    srs_data: appData
+                }, { merge: true });
+
+                syncLabel.innerHTML = 'تم الحفظ <i class="fa-solid fa-check"></i>';
+                syncLabel.className = 'text-green-500';
+                setTimeout(() => {
+                    syncLabel.innerHTML = 'متصل <i class="fa-solid fa-wifi"></i>';
+                }, 2000);
+            } catch (err) {
+                syncLabel.innerHTML = 'فشل الحفظ <i class="fa-solid fa-times"></i>';
+                syncLabel.className = 'text-red-500';
+            }
+        }
+
+        // --- Functions exposed to window for HTML events ---
+        window.renderLimitLessHome = () => {
+            const main = document.getElementById('mainContent');
+            const lessons = appData.lessons || [];
+
+            if (lessons.length === 0) {
+                main.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-[60vh] text-center">
+                        <img src="https://cdni.iconscout.com/illustration/premium/thumb/cloud-storage-4344719-3605238.png" width="200" class="mb-6 opacity-80">
+                        <h2 class="text-2xl font-bold dark:text-white">مساحتك السحابية فارغة</h2>
+                        <p class="text-gray-400 mt-2 max-w-xs">جميع دروسك هنا ستكون محفوظة وآمنة دائماً.</p>
+                        <button onclick="openAddModal()" class="mt-6 bg-brand text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-brand/30">أضف أول درس</button>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `<div class="space-y-4 pb-20">`;
+            lessons.forEach(l => {
+                html += `
+                    <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex justify-between items-center">
+                        <div>
+                            <span class="text-xs font-bold text-brand bg-blue-50 dark:bg-slate-700 px-2 py-1 rounded inline-block mb-1">${l.subject}</span>
+                            <h4 class="font-bold text-lg dark:text-white">${l.title}</h4>
+                        </div>
+                        <button onclick="deleteLesson(${l.id})" class="text-gray-300 hover:text-red-500"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            main.innerHTML = html;
+        };
+
+        window.openAddModal = () => {
+            document.getElementById('addModal').classList.remove('hidden');
+        };
+
+        window.addNewLesson = async () => {
+            const title = document.getElementById('inpTitle').value;
+            const subject = document.getElementById('inpSubject').value;
+
+            if (!title) return;
+
+            appData.lessons.push({
+                id: Date.now(),
+                title, subject,
+                created: new Date().toISOString()
+            });
+
+            document.getElementById('addModal').classList.add('hidden');
+            document.getElementById('inpTitle').value = '';
+
+            renderLimitLessHome();
+            await saveData();
+        };
+
+        window.deleteLesson = async (id) => {
+            if (confirm("حذف؟")) {
+                appData.lessons = appData.lessons.filter(l => l.id !== id);
+                renderLimitLessHome();
+                await saveData();
+            }
+        };
+
+        // Dark mode detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+</body>
+
+</html>
