@@ -50,9 +50,24 @@
 
     <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden">
 
-        <div class="bg-indigo-600 p-6 text-center">
-            <h1 class="text-2xl font-bold text-white mb-1">أداة علم</h1>
-            <p class="text-indigo-200 text-sm">بوابتك التعليمية الموحدة</p>
+        <div class="text-center mb-6 pt-8">
+            <h1 class="text-3xl font-black text-slate-800 mb-2">أهلاً بك مجدداً</h1>
+            <p class="text-slate-400">سجل دخولك للمتابعة</p>
+        </div>
+
+        <!-- Google Sign-In Button -->
+        <div class="px-8">
+            <button id="btn-google"
+                class="w-full bg-white border border-gray-200 text-slate-700 py-3 rounded-lg font-bold hover:bg-gray-50 transition flex justify-center items-center gap-2 mb-4 shadow-sm">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="24" height="24" alt="Google">
+                <span>الدخول باستخدام Google</span>
+            </button>
+
+            <div class="flex items-center gap-4 mb-4">
+                <div class="h-px bg-gray-200 flex-1"></div>
+                <span class="text-xs text-gray-400 font-bold">أو بالبريد الإلكتروني</span>
+                <div class="h-px bg-gray-200 flex-1"></div>
+            </div>
         </div>
 
         <div class="flex border-b">
@@ -158,6 +173,10 @@
         // تم التأكد من استيراد setPersistence
         import { getAuth, setPersistence, browserLocalPersistence, browserSessionPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { signInWithGoogle } from './js/utils.js'; // Import Helper
+
+        // ... (Config remains same) ...
+
 
         const firebaseConfig = {
             apiKey: "AIzaSyBlCbda5aTp4C1xR8iP_k7Ja3f_u8aDr0U",
@@ -318,6 +337,47 @@
             }
         };
 
+        // --- Google Sign-In Handler ---
+        const btnGoogle = document.getElementById('btn-google');
+        if (btnGoogle) {
+            btnGoogle.onclick = async () => {
+                try {
+                    btnGoogle.innerHTML = '<div class="loader"></div> جاري الاتصال...';
+                    btnGoogle.disabled = true;
+
+                    const result = await signInWithGoogle();
+                    const user = result.user;
+
+                    // Check if user exists in DB
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+
+                    if (!userDoc.exists()) {
+                        // Create new profile for Google User
+                        await setDoc(doc(db, "users", user.uid), {
+                            uid: user.uid,
+                            displayName: user.displayName,
+                            email: user.email,
+                            phone: user.phoneNumber || '',
+                            photoURL: user.photoURL,
+                            specialization: 'General', // Default
+                            role: 'student',
+                            registrationDate: Timestamp.now(),
+                            access_list: []
+                        });
+                    }
+
+                    showMsg("تم الدخول بنجاح! جاري التوجيه...", "success");
+                    await smartRedirect(user);
+
+                } catch (err) {
+                    console.error("Google Sign-In Error:", err);
+                    showMsg("فشل الدخول عبر Google: " + err.message, "error");
+                    btnGoogle.innerHTML = '<img src="https://www.svgrepo.com/show/475656/google-color.svg" width="24" height="24"> <span>الدخول باستخدام Google</span>';
+                    btnGoogle.disabled = false;
+                }
+            };
+        }
+
         // --- Register Handler ---
         regForm.onsubmit = async (e) => {
             e.preventDefault();
@@ -366,9 +426,10 @@
 
             } catch (err) {
                 console.error(err);
-                let msg = "حدث خطأ أثناء التسجيل";
+                let msg = "حدث خطأ أثناء التسجيل: " + (err.code || err.message); // Show actual error
                 if (err.code === 'auth/email-already-in-use') msg = "البريد الإلكتروني مستخدم بالفعل";
                 if (err.code === 'auth/weak-password') msg = "كلمة المرور ضعيفة";
+                if (err.code === 'auth/operation-not-allowed') msg = "خطأ: لم يتم تفعيل التسجيل بالبريد وكلمة المرور في لوحة Firebase Console.";
                 showMsg(msg, "error");
                 btn.disabled = false;
                 loader.classList.add('hidden');
