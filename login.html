@@ -169,28 +169,13 @@
 
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        // تم التأكد من استيراد setPersistence
-        import { getAuth, setPersistence, browserLocalPersistence, browserSessionPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { signInWithGoogle } from './js/utils.js'; // Import Helper
+        import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { doc, setDoc, getDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // IMPORT EVERYTHING FROM UTILS to avoid Double Init Error
+        import { auth, db, signInWithGoogle } from './js/utils.js';
 
-        // ... (Config remains same) ...
+        // No new config/init here!
 
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBlCbda5aTp4C1xR8iP_k7Ja3f_u8aDr0U",
-            authDomain: "adatealm-182e1.firebaseapp.com",
-            projectId: "adatealm-182e1",
-            storageBucket: "adatealm-182e1.firebasestorage.app",
-            messagingSenderId: "558725323264",
-            appId: "1:558725323264:web:f39bd70c7eacb6513556e5",
-            measurementId: "G-EMTR2CRC69"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
 
         // --- متغيرات خاصة بحفظ البريد الإلكتروني ---
         const loginEmailInput = document.getElementById('login-email');
